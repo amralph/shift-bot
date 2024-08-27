@@ -15,7 +15,7 @@ USER = os.getenv('USER')
 PASSWORD = os.getenv('PASSWORD')
 WEBSITE = os.getenv('WEBSITE')
 
-REFRESH_INTERVAL = 5
+REFRESH_INTERVAL = 2
 
 
 def log_in(user, password, driver):
@@ -52,6 +52,46 @@ def log_in(user, password, driver):
         print(e)
 
 
+def check_weeks(weeks, driver):
+    for week in weeks:
+        days = week.find_elements(By.CLASS_NAME, 'dayContainer')
+        # then remove the last 4 days, we only care about mon, tues, wed
+        del days[3:]
+
+        # now for each day in days, check if it's clickable
+        for day in days:
+            # if it's not a past day, continue
+            if not ('past' in day.get_attribute('class')):
+                # click the day
+                driver.implicitly_wait(5)
+                day.click()
+                driver.implicitly_wait(5)
+                # check if we have shifts today, if we do, go to the next day
+                text_to_find = 'You have no shifts on this day.'
+                no_shifts_today = bool(len(driver.find_elements(By.XPATH, f"//div[contains(text(), '{text_to_find}')]")))
+
+                if no_shifts_today:
+
+                    try:
+                        # find the open shifts button and click it
+                        find_shifts_button = driver.find_element(By.CLASS_NAME, 'di_find_work')
+                        find_shifts_button.click()
+                        driver.implicitly_wait(5)
+
+                        # pick up shifts if they are there...
+
+                        # otherwise, close the modals and go to the next day
+                        close_buttons = driver.find_elements(By.CLASS_NAME, 'di_close')
+                        close_buttons[1].click()
+                        driver.implicitly_wait(5)
+                        close_buttons[0].click()
+                        driver.implicitly_wait(5)
+
+                    except NoSuchElementException as e:
+                        print(e)
+                        print('Could not find di_find_work button.')
+
+
 def pick_up_shifts(driver):
     # first verify we're on the correct page by checking if current date is in the calendar
     current_date = datetime.now().strftime("%Y%m%d")
@@ -60,10 +100,15 @@ def pick_up_shifts(driver):
         driver.find_element(By.ID, current_date)
         # if no error from this, we are on the correct calendar page.
 
-        # now that we know we're on the correct page, we need to check every monday, tuesday and wednesday possible
-        # which comes on or after our current date
+        # get second and third calendar week elements, based on our assumption that our current week will always
+        # be the second week of the second page
+        calendar_weeks_first_page = driver.find_elements(By.CLASS_NAME, 'calendarWeek')
 
-        # so first, for each day we check, first check if we don;t have a shift for this day
+        # we only care about the last two weeks here, so delete the first week
+        del calendar_weeks_first_page[0]
+
+        # do the check weeks logic
+        check_weeks(calendar_weeks_first_page, driver)
 
     except NoSuchElementException as e:
         print(e)
@@ -71,7 +116,6 @@ def pick_up_shifts(driver):
 
 
 if __name__ == '__main__':
-
     while True:
         # initialize driver
         DRIVER = webdriver.Chrome()
@@ -80,30 +124,16 @@ if __name__ == '__main__':
         # log in
         log_in(USER, PASSWORD, DRIVER)
 
-        # iterate over dates... how can we do this? Monday will always be first in a week row, and so on
-        # we could also verify with a calendar library function
+        DRIVER.implicitly_wait(1)
 
         # find_shifts()
 
         # do stuff
-        time.sleep(5)
 
-        # check date, if no shifts on that date (determined by "You have no shifts on this day") then press Find Extra Shifts
-        # if extra shifts available, pick up shift
-        # repeat this for all days...
-
-
-        # get current date
-        # check monday, tuesday, wednesday that comes after current date
-        # the html has a box with seven days for each week
-
-        # gonna develop code while assuming the page that shows up will always be the second page, and
+        # going to develop code while assuming the page that shows up will always be the second page, and
         # also assume that the current week is always the middle week on the second page, and also going to assume that
         # there will always be 1 week after on the same page, then another week after that on the next page...
-
         pick_up_shifts(DRIVER)
-
-
 
         # kill driver (logging out is unnecessary with this line)
         DRIVER.quit()
