@@ -56,46 +56,70 @@ def check_weeks(weeks, driver):
     for week in weeks:
         days = week.find_elements(By.CLASS_NAME, 'dayContainer')
         # then remove the last 4 days, we only care about mon, tues, wed
-        del days[3:]
+        #del days[3:]
 
         # now for each day in days, check if it's clickable
         for day in days:
             # if it's not a past day, continue
             if not ('past' in day.get_attribute('class')):
                 # click the day
-                driver.implicitly_wait(5)
+                driver.implicitly_wait(1)
                 day.click()
-                driver.implicitly_wait(5)
-                # check if we have shifts today, if we do, go to the next day
-                text_to_find = 'You have no shifts on this day.'
-                no_shifts_today = bool(len(driver.find_elements(By.XPATH, f"//div[contains(text(), '{text_to_find}')]")))
+                driver.implicitly_wait(1)
 
-                if no_shifts_today:
+                # pick up day modal
+                day_modal = driver.find_element(By.CLASS_NAME, 'modal-content')
 
+                # check if we have shifts today
+                no_assigned_shifts_text = 'You have no shifts on this day.'
+                # there's a shift if we don't find an element that says 'You have no shifts on this day.'.
+                assigned_shifts_today = not bool(len(day_modal.find_elements(By.XPATH, f".//div[contains(text(), '{no_assigned_shifts_text}')]")))
+
+                # also, we really do not want to even check for shifts if we booked it off
+                # the following words will appear in the modal if it's booked off.
+                has_lieu = bool(len(day_modal.find_elements(By.XPATH, f".//div[contains(text(), 'LIEU')]")))
+                has_pto = bool(len(day_modal.find_elements(By.XPATH, f".//div[contains(text(), 'PTO')]")))
+                has_vacu = bool(len(day_modal.find_elements(By.XPATH, f".//div[contains(text(), 'VACU')]")))
+
+
+                # if we have no shift today AND we don't have LIEU, PTO, or VACU in the modal, look for a shift
+                if not assigned_shifts_today and not (has_lieu or has_pto or has_vacu):
                     try:
                         # find the open shifts button and click it
                         find_shifts_button = driver.find_element(By.CLASS_NAME, 'di_find_work')
                         find_shifts_button.click()
-                        driver.implicitly_wait(5)
+                        driver.implicitly_wait(1)
 
                         # pick up shifts if they are there...
+                        # to check for shifts, find the "Select a shift you would like to take."
+                        available_shifts_text = 'Select a shift you would like to take.'
+                        shifts_available = bool(len(driver.find_elements(By.XPATH, f"//div[contains(text(), '{available_shifts_text}')]")))
 
-                        # otherwise, close the modals and go to the next day
+                        if shifts_available:
+                            print(f'We have shifts available on {day.get_attribute("id")}')
+                            # then we pick up the shift
+                        else:
+                            print(f'We do not have shifts available on {day.get_attribute("id")}')
+                        #  close the modals and go to the next day
                         close_buttons = driver.find_elements(By.CLASS_NAME, 'di_close')
                         close_buttons[1].click()
-                        driver.implicitly_wait(5)
+                        driver.implicitly_wait(1)
                         close_buttons[0].click()
-                        driver.implicitly_wait(5)
+                        driver.implicitly_wait(1)
 
                     except NoSuchElementException as e:
                         print(e)
                         print('Could not find di_find_work button.')
+                # if we do have a shift today, close the modal
+                else:
+                    close_buttons = driver.find_elements(By.CLASS_NAME, 'di_close')
+                    close_buttons[0].click()
+                    driver.implicitly_wait(1)
 
 
 def pick_up_shifts(driver):
     # first verify we're on the correct page by checking if current date is in the calendar
     current_date = datetime.now().strftime("%Y%m%d")
-
     try:
         driver.find_element(By.ID, current_date)
         # if no error from this, we are on the correct calendar page.
