@@ -17,6 +17,13 @@ WEBSITE = os.getenv('WEBSITE')
 
 REFRESH_INTERVAL = 2
 
+# time pairs
+TIME_PAIR_DICT = {
+    ('12:00', '20:00'): 1,
+    ('14:00', '22:00'): 2,
+    ('18:00', '02:00'): 3,
+    ('20:00', '04:00'): 4
+}
 
 def log_in(user, password, driver):
     """Logs in user in the browser given user, password, and driver
@@ -51,6 +58,13 @@ def log_in(user, password, driver):
     except NoSuchElementException as e:
         print(e)
 
+def close_modals(driver):
+    close_buttons = driver.find_elements(By.CLASS_NAME, 'di_close')
+    close_buttons[1].click()
+    driver.implicitly_wait(1)
+    close_buttons[0].click()
+    driver.implicitly_wait(1)
+
 
 def check_weeks(weeks, driver):
     for week in weeks:
@@ -84,32 +98,69 @@ def check_weeks(weeks, driver):
 
                 # if we have no shift today AND we don't have LIEU, PTO, or VACU in the modal, look for a shift
                 if not assigned_shifts_today and not (has_lieu or has_pto or has_vacu):
-                    try:
-                        # find the open shifts button and click it
-                        find_shifts_button = driver.find_element(By.CLASS_NAME, 'di_find_work')
-                        find_shifts_button.click()
-                        driver.implicitly_wait(1)
 
-                        # pick up shifts if they are there...
-                        # to check for shifts, find the "Select a shift you would like to take."
-                        available_shifts_text = 'Select a shift you would like to take.'
-                        shifts_available = bool(len(driver.find_elements(By.XPATH, f"//div[contains(text(), '{available_shifts_text}')]")))
+                    # find the open shifts button and click it
+                    find_shifts_button = driver.find_elements(By.CLASS_NAME, 'di_find_work')
+                    find_shifts_button[0].click()
+                    driver.implicitly_wait(1)
 
-                        if shifts_available:
-                            print(f'We have shifts available on {day.get_attribute("id")}')
-                            # then we pick up the shift
+                    # pick up shifts if they are there...
+                    # to check for shifts, find the "Select a shift you would like to take."
+                    available_shifts_text = 'Select a shift you would like to take.'
+                    shifts_available = bool(len(driver.find_elements(By.XPATH, f"//div[contains(text(), '{available_shifts_text}')]")))
+
+                    if shifts_available:
+                        print(f'We have shifts available on {day.get_attribute("id")}')
+                        # then we pick up the shift
+                        # priority
+                        # 12:00 20:00
+                        # 14:00 22:00
+                        # 18:00 02:00
+                        # 20:00 04:00
+
+                        # pick up the table
+                        shifts_table = driver.find_elements(By.TAG_NAME, 'table')[0]
+
+                        # get all rows in the table except the first one
+                        rows = shifts_table.find_elements(By.TAG_NAME, 'tr')
+                        del rows[0]
+
+                        valid_rows = []
+
+                        # filter out the rows that contain our VALID_TIME_PAIRS
+                        for row in rows:
+                            start_time = row.find_element(By.CLASS_NAME, 'starttime').text
+                            end_time = row.find_element(By.CLASS_NAME, 'endtime').text
+
+                            # check if starttime and endtime is in the list of valid pairs
+                            if (start_time, end_time) in TIME_PAIR_DICT:
+                                valid_rows.append((row, TIME_PAIR_DICT[(start_time, end_time)]))
+
+                        # sort the valid rows based on the priority
+                        valid_rows.sort(key=lambda x: x[1])
+
+                        # if there's a shift we want to take, click the highest priority one
+                        if valid_rows:
+                            valid_rows[0][0].click()
+                            driver.implicitly_wait(1)
+                            # click take shift button
+                            # find out if we need to close modals
+                            # if we don't know, let's just go back to the home page?
+                            # profit
+
+                            # need to find out what happens after picking up a shift here...
+                            # refreshing page causes error
+                            close_modals(driver)
                         else:
-                            print(f'We do not have shifts available on {day.get_attribute("id")}')
-                        #  close the modals and go to the next day
-                        close_buttons = driver.find_elements(By.CLASS_NAME, 'di_close')
-                        close_buttons[1].click()
-                        driver.implicitly_wait(1)
-                        close_buttons[0].click()
-                        driver.implicitly_wait(1)
+                            # else, there is no shift we want, go to next day
+                            #  close the modals and go to the next day
+                            close_modals(driver)
 
-                    except NoSuchElementException as e:
-                        print(e)
-                        print('Could not find di_find_work button.')
+                    else:
+                        print(f'We do not have shifts available on {day.get_attribute("id")}')
+                        #  close the modals and go to the next day
+                        close_modals(driver)
+
                 # if we do have a shift today, close the modal
                 else:
                     close_buttons = driver.find_elements(By.CLASS_NAME, 'di_close')
