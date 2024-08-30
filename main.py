@@ -15,7 +15,7 @@ USER = os.getenv('USER')
 PASSWORD = os.getenv('PASSWORD')
 WEBSITE = os.getenv('WEBSITE')
 
-REFRESH_INTERVAL = 2
+REFRESH_INTERVAL = 60
 
 # time pairs
 TIME_PAIR_DICT = {
@@ -33,7 +33,7 @@ def log_in(user, password, driver):
     password (string): password
     driver (WebDriver): an instance of `selenium.webdriver.chrome.webdriver.WebDriver`
 
-    Returns: none
+    Returns: None
 
     Raises:
     NoSuchElementException: if elements can't be found by the driver
@@ -59,6 +59,16 @@ def log_in(user, password, driver):
         print(e)
 
 def close_modals(driver):
+    """Closes modals on the screen that have di_close in its class
+    works hopefully by getting a list of all di_close buttons
+    and because they will appear from top layer to bottom layer,
+    we close them in reverse order
+
+    Parameters:
+    driver (WebDriver): an instance of `selenium.webdriver.chrome.webdriver.WebDriver`
+
+    Returns: None
+    """
     close_buttons = driver.find_elements(By.CLASS_NAME, 'di_close')
 
     for button in reversed(close_buttons):
@@ -66,20 +76,28 @@ def close_modals(driver):
         driver.implicitly_wait(1)
 
 
-def check_weeks(weeks, driver):
+def check_weeks(weeks, time_pair_dict, driver):
+    """Helper function for pick_up_shifts
+    Will check a given week, then will pick up shifts on each day if appropriate
+
+    Parameters:
+    weeks (list of WebElement): a list of Selenium WebElement objects representing weeks
+    driver (WebDriver): an instance of `selenium.webdriver.chrome.webdriver.WebDriver`
+
+    Returns: None
+    """
     for week in weeks:
         days = week.find_elements(By.CLASS_NAME, 'dayContainer')
         # then remove the last 4 days, we only care about mon, tues, wed
-        #del days[3:]
+        del days[3:]
 
         # now for each day in days, check if it's clickable
         for day in days:
             # if it's not a past day, continue
             if not ('past' in day.get_attribute('class')):
                 # click the day
-                driver.implicitly_wait(1)
                 day.click()
-                driver.implicitly_wait(1)
+                driver.implicitly_wait(0.5)
 
                 # pick up day modal
                 day_modal = driver.find_element(By.CLASS_NAME, 'modal-content')
@@ -127,14 +145,15 @@ def check_weeks(weeks, driver):
 
                         valid_rows = []
 
-                        # filter out the rows that contain our VALID_TIME_PAIRS
+                        # filter out the rows that don't contain our valid time pairs
                         for row in rows:
                             start_time = row.find_element(By.CLASS_NAME, 'starttime').text
                             end_time = row.find_element(By.CLASS_NAME, 'endtime').text
 
                             # check if starttime and endtime is in the list of valid pairs
-                            if (start_time, end_time) in TIME_PAIR_DICT:
-                                valid_rows.append((row, TIME_PAIR_DICT[(start_time, end_time)]))
+                            if (start_time, end_time) in time_pair_dict:
+                                # insert a tuple into valid_rows, (row, priority of that row)
+                                valid_rows.append((row, time_pair_dict[(start_time, end_time)]))
 
                         # sort the valid rows based on the priority
                         valid_rows.sort(key=lambda x: x[1])
@@ -144,31 +163,41 @@ def check_weeks(weeks, driver):
                             valid_rows[0][0].click()
                             driver.implicitly_wait(1)
                             # click take shift button
-                            # find out if we need to close modals
-                            # if we don't know, let's just go back to the home page?
-                            # profit
-
-                            # need to find out what happens after picking up a shift here...
-                            # refreshing page causes error
+                            # switch this to find_element by ClassName, probably will be di_take_shift
+                            take_shift_button = driver.find_element(By.XPATH, "//a[text()='Take Shift']")
+                            take_shift_button.click()
+                            driver.implicitly_wait(3)
                             close_modals(driver)
                         else:
                             # else, there is no shift we want, go to next day
                             #  close the modals and go to the next day
+                            print(f'There is no shift we want on {day.get_attribute("id")}')
                             close_modals(driver)
 
                     else:
-                        print(f'We do not have shifts available on {day.get_attribute("id")}')
-                        #  close the modals and go to the next day
+                        # close the modals and go to the next day
+                        print(f'We have no shifts available on {day.get_attribute("id")}')
                         close_modals(driver)
 
-                # if we do have a shift today, close the modal
+                # if we do have a shift today, or we have vacation, close the modal
                 else:
+                    print(f'We are already working, or we have vacation on {day.get_attribute("id")}')
                     close_buttons = driver.find_elements(By.CLASS_NAME, 'di_close')
                     close_buttons[0].click()
                     driver.implicitly_wait(1)
 
 
-def pick_up_shifts(driver):
+def pick_up_shifts(driver, time_pair_dict):
+    """Picks up shifts if they exist
+
+    Parameters:
+    driver (WebDriver): an instance of `selenium.webdriver.chrome.webdriver.WebDriver`
+
+    Returns: None
+
+    Raises:
+    NoSuchElementException: if elements can't be found by the driver, in particular, today's date
+    """
     # first verify we're on the correct page by checking if current date is in the calendar
     current_date = datetime.now().strftime("%Y%m%d")
     try:
@@ -183,7 +212,16 @@ def pick_up_shifts(driver):
         del calendar_weeks_first_page[0]
 
         # do the check weeks logic
-        check_weeks(calendar_weeks_first_page, driver)
+        check_weeks(calendar_weeks_first_page, time_pair_dict, driver)
+        driver.implicitly_wait(1)
+
+        # once first check_weeks is done, go to the next page of weeks
+        next_button = driver.find_elements(By.CLASS_NAME, 'di_next')
+        next_button[0].click()
+        driver.implicitly_wait(2)
+
+        calendar_weeks_second_page = driver.find_elements(By.CLASS_NAME, 'calendarWeek')
+        check_weeks(calendar_weeks_second_page, time_pair_dict, driver)
 
     except NoSuchElementException as e:
         print(e)
@@ -198,17 +236,12 @@ if __name__ == '__main__':
 
         # log in
         log_in(USER, PASSWORD, DRIVER)
-
         DRIVER.implicitly_wait(1)
-
-        # find_shifts()
-
-        # do stuff
 
         # going to develop code while assuming the page that shows up will always be the second page, and
         # also assume that the current week is always the middle week on the second page, and also going to assume that
         # there will always be 1 week after on the same page, then another week after that on the next page...
-        pick_up_shifts(DRIVER)
+        pick_up_shifts(DRIVER, TIME_PAIR_DICT)
 
         # kill driver (logging out is unnecessary with this line)
         DRIVER.quit()
