@@ -253,7 +253,7 @@ if __name__ == '__main__':
         else:
             # initialize driver in Heroku
             chrome_options = Options()
-            chrome_options.add_argument("--headless")  # Run in headless mode
+            chrome_options.add_argument("--headless=chrome")  # Run in headless mode
             chrome_options.add_argument("--no-sandbox")
             chrome_options.add_argument("--disable-dev-shm-usage")
             DRIVER = webdriver.Chrome(options=chrome_options)
