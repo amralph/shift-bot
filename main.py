@@ -205,6 +205,7 @@ def pick_up_shifts(driver, time_pair_dict):
     # first verify we're on the correct page by checking if current date is in the calendar
     current_date = datetime.now().strftime("%Y%m%d")
     try:
+        time.sleep(1)
         driver.find_element(By.ID, current_date)
         # if no error from this, we are on the correct calendar page.
 
