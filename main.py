@@ -218,11 +218,13 @@ def pick_up_shifts(driver, time_pair_dict):
         # do the check weeks logic
         check_weeks(calendar_weeks_first_page, time_pair_dict, driver)
         driver.implicitly_wait(1)
+        time.sleep(1)
 
         # once first check_weeks is done, go to the next page of weeks
         next_button = driver.find_elements(By.CLASS_NAME, 'di_next')
         next_button[0].click()
         driver.implicitly_wait(5)
+        time.sleep(1)
 
         calendar_weeks_second_page = driver.find_elements(By.CLASS_NAME, 'calendarWeek')
         print(calendar_weeks_second_page)
