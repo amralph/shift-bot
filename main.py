@@ -60,10 +60,10 @@ def log_in(user, password, driver):
 
 def close_modals(driver):
     close_buttons = driver.find_elements(By.CLASS_NAME, 'di_close')
-    close_buttons[1].click()
-    driver.implicitly_wait(1)
-    close_buttons[0].click()
-    driver.implicitly_wait(1)
+
+    for button in reversed(close_buttons):
+        button.click()
+        driver.implicitly_wait(1)
 
 
 def check_weeks(weeks, driver):
