@@ -215,6 +215,9 @@ def pick_up_shifts(driver, time_pair_dict):
         calendar_weeks_first_page = driver.find_elements(By.CLASS_NAME, 'calendarWeek')
         print('first page', calendar_weeks_first_page)
 
+        for week in calendar_weeks_first_page:
+            print(week.get_attribute('outerHTML'))
+
         # we only care about the last two weeks here, so delete the first week
         print('delete first week')
         del calendar_weeks_first_page[0]
