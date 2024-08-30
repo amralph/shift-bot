@@ -205,23 +205,29 @@ def pick_up_shifts(driver, time_pair_dict):
     # first verify we're on the correct page by checking if current date is in the calendar
     current_date = datetime.now().strftime("%Y%m%d")
     try:
-        time.sleep(1)
+        print('finding date')
         driver.find_element(By.ID, current_date)
         # if no error from this, we are on the correct calendar page.
 
         # get second and third calendar week elements, based on our assumption that our current week will always
         # be the second week of the second page
+        print('get weeks on first page')
         calendar_weeks_first_page = driver.find_elements(By.CLASS_NAME, 'calendarWeek')
+        print('first page', calendar_weeks_first_page)
 
         # we only care about the last two weeks here, so delete the first week
+        print('delete first week')
         del calendar_weeks_first_page[0]
+        print('first page', calendar_weeks_first_page)
 
         # do the check weeks logic
+        print('checking weeks')
         check_weeks(calendar_weeks_first_page, time_pair_dict, driver)
         driver.implicitly_wait(1)
         time.sleep(1)
 
         # once first check_weeks is done, go to the next page of weeks
+        print('press next button')
         next_button = driver.find_elements(By.CLASS_NAME, 'di_next')
         next_button[0].click()
         driver.implicitly_wait(5)
