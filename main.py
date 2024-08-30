@@ -225,6 +225,7 @@ def pick_up_shifts(driver, time_pair_dict):
         driver.implicitly_wait(5)
 
         calendar_weeks_second_page = driver.find_elements(By.CLASS_NAME, 'calendarWeek')
+        print(calendar_weeks_second_page)
         check_weeks(calendar_weeks_second_page, time_pair_dict, driver)
 
     except NoSuchElementException as e:
