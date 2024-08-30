@@ -17,7 +17,7 @@ PASSWORD = os.getenv('PASSWORD')
 WEBSITE = os.getenv('WEBSITE')
 LOCAL = os.getenv('LOCAL')
 
-REFRESH_INTERVAL = 2
+REFRESH_INTERVAL = 60
 
 # time pairs
 TIME_PAIR_DICT = {
