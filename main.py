@@ -1,6 +1,6 @@
 import time
 import os
-from datetime import datetime, date, timezone
+from datetime import datetime
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
