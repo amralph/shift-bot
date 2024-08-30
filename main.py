@@ -5,8 +5,11 @@ from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.chrome.options import Options
 
 from dotenv import load_dotenv, find_dotenv
+
+
 
 
 # credentials
@@ -14,6 +17,7 @@ load_dotenv(find_dotenv())
 USER = os.getenv('USER')
 PASSWORD = os.getenv('PASSWORD')
 WEBSITE = os.getenv('WEBSITE')
+LOCAL = os.getenv('LOCAL')
 
 REFRESH_INTERVAL = 60
 
@@ -230,8 +234,17 @@ def pick_up_shifts(driver, time_pair_dict):
 
 if __name__ == '__main__':
     while True:
-        # initialize driver
-        DRIVER = webdriver.Chrome()
+        # initialize driver LOCALLY
+        if LOCAL == 'TRUE':
+            DRIVER = webdriver.Chrome()
+        else:
+            # initialize driver in Heroku
+            chrome_options = Options()
+            chrome_options.add_argument("--headless")  # Run in headless mode
+            chrome_options.add_argument("--no-sandbox")
+            chrome_options.add_argument("--disable-dev-shm-usage")
+            DRIVER = webdriver.Chrome(options=chrome_options)
+
         DRIVER.get(WEBSITE)
 
         # log in
