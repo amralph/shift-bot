@@ -10,8 +10,6 @@ from selenium.webdriver.chrome.options import Options
 from dotenv import load_dotenv, find_dotenv
 
 
-
-
 # credentials
 load_dotenv(find_dotenv())
 USER = os.getenv('USER')
@@ -19,7 +17,7 @@ PASSWORD = os.getenv('PASSWORD')
 WEBSITE = os.getenv('WEBSITE')
 LOCAL = os.getenv('LOCAL')
 
-REFRESH_INTERVAL = 60
+REFRESH_INTERVAL = 2
 
 # time pairs
 TIME_PAIR_DICT = {
@@ -170,6 +168,7 @@ def check_weeks(weeks, time_pair_dict, driver):
                             # switch this to find_element by ClassName, probably will be di_take_shift
                             take_shift_button = driver.find_element(By.XPATH, "//a[text()='Take Shift']")
                             take_shift_button.click()
+                            print('shift picked up')
                             driver.implicitly_wait(3)
                             close_modals(driver)
                         else:
@@ -211,34 +210,53 @@ def pick_up_shifts(driver, time_pair_dict):
 
         # get second and third calendar week elements, based on our assumption that our current week will always
         # be the second week of the second page
-        print('get weeks on first page')
-        calendar_weeks_first_page = driver.find_elements(By.CLASS_NAME, 'calendarWeek')
-        print('first page', calendar_weeks_first_page)
-
-        for week in calendar_weeks_first_page:
-            print(week.get_attribute('outerHTML'))
-
+        # print('get weeks on first page')
+        # calendar_weeks_first_page = driver.find_elements(By.CLASS_NAME, 'calendarWeek')
+        # print('first page', calendar_weeks_first_page)
+        #
+        # for week in calendar_weeks_first_page:
+        #     print(week.get_attribute('outerHTML'))
+        #
         # we only care about the last two weeks here, so delete the first week
-        print('delete first week')
-        del calendar_weeks_first_page[0]
-        print('first page', calendar_weeks_first_page)
+        # print('delete first week')
+        # del calendar_weeks_first_page[0]
+        # print('first page', calendar_weeks_first_page)
+        #
+        # # do the check weeks logic
+        # print('checking weeks')
+        # check_weeks(calendar_weeks_first_page, time_pair_dict, driver)
+        # driver.implicitly_wait(1)
+        # time.sleep(1)
+        #
+        # # once first check_weeks is done, go to the next page of weeks
+        # print('press next button')
+        # next_button = driver.find_elements(By.CLASS_NAME, 'di_next')
+        # next_button[0].click()
+        # driver.implicitly_wait(5)
+        # time.sleep(1)
+        #
+        # calendar_weeks_second_page = driver.find_elements(By.CLASS_NAME, 'calendarWeek')
+        # print(calendar_weeks_second_page)
+        # check_weeks(calendar_weeks_second_page, time_pair_dict, driver)
 
-        # do the check weeks logic
-        print('checking weeks')
-        check_weeks(calendar_weeks_first_page, time_pair_dict, driver)
-        driver.implicitly_wait(1)
-        time.sleep(1)
+        # in headless, i think it's only one week per page
+        while True:
+            # get calendar
+            calendar_weeks = driver.find_elements(By.CLASS_NAME, 'calendarWeek')
 
-        # once first check_weeks is done, go to the next page of weeks
-        print('press next button')
-        next_button = driver.find_elements(By.CLASS_NAME, 'di_next')
-        next_button[0].click()
-        driver.implicitly_wait(5)
-        time.sleep(1)
+            # for each week, do it
 
-        calendar_weeks_second_page = driver.find_elements(By.CLASS_NAME, 'calendarWeek')
-        print(calendar_weeks_second_page)
-        check_weeks(calendar_weeks_second_page, time_pair_dict, driver)
+            check_weeks(calendar_weeks, time_pair_dict, driver)
+
+            next_button = driver.find_elements(By.CLASS_NAME, 'di_next')
+            next_button_class = next_button[0].get_attribute('class')
+
+            if 'disabled' not in next_button_class:
+                next_button[0].click()
+                driver.implicitly_wait(1)
+            else:
+                break
+
 
     except NoSuchElementException as e:
         print(e)
