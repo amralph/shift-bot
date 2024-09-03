@@ -262,7 +262,7 @@ def pick_up_shifts(driver, time_pair_dict):
         print(e)
         print("Date not found. Probably on the wrong calendar page.")
 
-#test
+
 if __name__ == '__main__':
     while True:
         # initialize driver LOCALLY
