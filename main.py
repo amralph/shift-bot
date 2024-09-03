@@ -203,7 +203,7 @@ def check_weeks(weeks, time_pair_dict, off_dates, work_days, driver):
 
                 # if we do have a shift today, or we have vacation, close the modal
                 else:
-                    print(f'We are already working, or we have vacation, or we do not want to work on {day.get_attribute("id")}')
+                    print(f'We are already working, or we do not want to work on {day.get_attribute("id")}')
                     close_buttons = driver.find_elements(By.CLASS_NAME, 'di_close')
                     close_buttons[0].click()
                     driver.implicitly_wait(1)
