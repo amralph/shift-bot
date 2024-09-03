@@ -118,6 +118,9 @@ def check_weeks(weeks, time_pair_dict, off_dates, work_days, driver):
                 no_assigned_shifts_text = 'You have no shifts on this day.'
                 # there's a shift if we don't find an element that says 'You have no shifts on this day.'.
                 assigned_shifts_today = not bool(len(day_modal.find_elements(By.XPATH, f".//div[contains(text(), '{no_assigned_shifts_text}')]")))
+                if assigned_shifts_today:
+                    print(day.get_attribute("id"), 'already working this day')
+
 
                 # also, we really do not want to even check for shifts if we booked it off
                 # the following words will appear in the modal if it's booked off.
@@ -157,11 +160,6 @@ def check_weeks(weeks, time_pair_dict, off_dates, work_days, driver):
                     if shifts_available:
                         print(f'We have shifts available on {day.get_attribute("id")}')
                         # then we pick up the shift
-                        # priority
-                        # 12:00 20:00
-                        # 14:00 22:00
-                        # 18:00 02:00
-                        # 20:00 04:00
 
                         # pick up the table
                         shifts_table = driver.find_elements(By.TAG_NAME, 'table')[0]
