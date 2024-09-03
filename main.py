@@ -19,7 +19,7 @@ PASSWORD = os.getenv('PASSWORD')
 WEBSITE = os.getenv('WEBSITE')
 LOCAL = os.getenv('LOCAL')
 OFF_DATES = ast.literal_eval(os.getenv('OFF_DATES'))
-WORK_DAYS = ast.literal_eval(os.getenv('WORK_DAYS'))
+WORK_DAYS = os.getenv('WORK_DAYS')
 
 REFRESH_INTERVAL = 300
 
@@ -95,10 +95,16 @@ def check_weeks(weeks, time_pair_dict, off_dates, work_days, driver):
     for week in weeks:
         days = week.find_elements(By.CLASS_NAME, 'dayContainer')
         # then remove the last 4 days, we only care about mon, tues, wed
-        del days[3:]
+
+        # del based on work_days
+
+        # convert the string to a list of indices
+        indices_to_keep = [int(char) for char in work_days]
+        # filter
+        filtered_days = [days[i] for i in indices_to_keep]
 
         # now for each day in days, check if it's clickable
-        for day in days:
+        for day in filtered_days:
             # if it's not a past day, continue
             if not ('past' in day.get_attribute('class')):
                 # click the day
