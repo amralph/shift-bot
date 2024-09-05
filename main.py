@@ -256,32 +256,33 @@ def pick_up_shifts(driver, time_pair_dict, off_dates, work_days):
 
 
 if __name__ == '__main__':
-    while True:
-        # initialize driver LOCALLY
-        if LOCAL == 'TRUE':
-            DRIVER = webdriver.Chrome()
-        else:
-            # initialize driver in Heroku
-            chrome_options = Options()
-            chrome_options.add_argument("--headless=chrome")  # Run in headless mode
-            chrome_options.add_argument("--no-sandbox")
-            chrome_options.add_argument("--disable-dev-shm-usage")
-            DRIVER = webdriver.Chrome(options=chrome_options)
+    #while True:
+    print('start')
+    # initialize driver LOCALLY
+    if LOCAL == 'TRUE':
+        DRIVER = webdriver.Chrome()
+    else:
+        # initialize driver in Heroku
+        chrome_options = Options()
+        chrome_options.add_argument("--headless=chrome")  # Run in headless mode
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-dev-shm-usage")
+        DRIVER = webdriver.Chrome(options=chrome_options)
 
-        DRIVER.get(WEBSITE)
+    DRIVER.get(WEBSITE)
 
-        # log in
-        log_in(USER, PASSWORD, DRIVER)
-        DRIVER.implicitly_wait(1)
+    # log in
+    log_in(USER, PASSWORD, DRIVER)
+    DRIVER.implicitly_wait(1)
 
-        # going to develop code while assuming the page that shows up will always be the second page, and
-        # also assume that the current week is always the middle week on the second page, and also going to assume that
-        # there will always be 1 week after on the same page, then another week after that on the next page...
-        pick_up_shifts(DRIVER, TIME_PAIR_DICT, OFF_DATES, WORK_DAYS)
+    # going to develop code while assuming the page that shows up will always be the second page, and
+    # also assume that the current week is always the middle week on the second page, and also going to assume that
+    # there will always be 1 week after on the same page, then another week after that on the next page...
+    pick_up_shifts(DRIVER, TIME_PAIR_DICT, OFF_DATES, WORK_DAYS)
 
-        # kill driver (logging out is unnecessary with this line)
-        DRIVER.quit()
+    # kill driver (logging out is unnecessary with this line)
+    DRIVER.quit()
 
-        # run the loop every REFRESH_INTERVAL
-        print("refreshing")
-        time.sleep(REFRESH_INTERVAL)
+    # run the loop every REFRESH_INTERVAL
+    print("refreshing")
+    time.sleep(REFRESH_INTERVAL)
