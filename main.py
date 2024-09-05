@@ -224,34 +224,27 @@ def pick_up_shifts(driver, time_pair_dict, off_dates, work_days):
     NoSuchElementException: if elements can't be found by the driver, in particular, today's date
     """
     # first verify we're on the correct page by checking if current date is in the calendar
-    current_date = datetime.now().strftime("%Y%m%d")
-    try:
-        print('finding date')
-        driver.find_element(By.ID, current_date)
-        # if no error from this, we are on the correct calendar page.
-
-        # in headless, i think it's only one week per page
-        while True:
-            # get calendar
-            calendar_weeks = driver.find_elements(By.CLASS_NAME, 'calendarWeek')
-
-            # for each week, do it
-
-            check_weeks(calendar_weeks, time_pair_dict, off_dates, work_days, driver)
-
-            next_button = driver.find_elements(By.CLASS_NAME, 'di_next')
-            next_button_class = next_button[0].get_attribute('class')
-
-            if 'disabled' not in next_button_class:
-                next_button[0].click()
-                driver.implicitly_wait(1)
-            else:
-                break
 
 
-    except NoSuchElementException as e:
-        print(e)
-        print("Date not found. Probably on the wrong calendar page.")
+    # in headless, i think it's only one week per page
+    while True:
+        # get calendar
+        calendar_weeks = driver.find_elements(By.CLASS_NAME, 'calendarWeek')
+
+        # for each week, do it
+
+        check_weeks(calendar_weeks, time_pair_dict, off_dates, work_days, driver)
+
+        next_button = driver.find_elements(By.CLASS_NAME, 'di_next')
+        next_button_class = next_button[0].get_attribute('class')
+
+        if 'disabled' not in next_button_class:
+            next_button[0].click()
+            driver.implicitly_wait(1)
+        else:
+            break
+
+
 
 
 if __name__ == '__main__':
