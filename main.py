@@ -1,4 +1,3 @@
-import time
 import os
 import ast
 
@@ -256,7 +255,7 @@ def pick_up_shifts(driver, time_pair_dict, off_dates, work_days):
 
 
 if __name__ == '__main__':
-    #while True:
+
     print('start')
     # initialize driver LOCALLY
     if LOCAL == 'TRUE':
@@ -284,5 +283,4 @@ if __name__ == '__main__':
     DRIVER.quit()
 
     # run the loop every REFRESH_INTERVAL
-    print("refreshing")
-    time.sleep(REFRESH_INTERVAL)
+    print("end")
