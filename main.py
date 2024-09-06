@@ -254,7 +254,7 @@ if __name__ == '__main__':
 
             DRIVER.get(WEBSITE)
 
-            DRIVER.implicitly_wait(0.5)
+            DRIVER.implicitly_wait(1)
 
             log_in(USER, PASSWORD, DRIVER)
 
