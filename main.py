@@ -235,7 +235,7 @@ if __name__ == '__main__':
 
     print('start')
     # let dyno spin, if that does anything...
-    time.sleep(10)
+    time.sleep(5)
 
     for i in range(2):
         try:
@@ -254,7 +254,7 @@ if __name__ == '__main__':
 
             DRIVER.get(WEBSITE)
 
-            DRIVER.implicitly_wait(1)
+            DRIVER.implicitly_wait(0.5)
 
             log_in(USER, PASSWORD, DRIVER)
 
@@ -264,7 +264,5 @@ if __name__ == '__main__':
             DRIVER.quit()
         except Exception as e:
             print(e)
-
-        time.sleep(10)
 
     print("end")
