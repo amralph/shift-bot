@@ -43,7 +43,7 @@ def log_in(user, password, driver):
     Raises:
     NoSuchElementException: if elements can't be found by the driver
     """
-    print('signin in')
+    print('signing in')
     try:
         # find elements, and if not found, raise exception (the code will break if you don't do this)
         username_box = driver.find_element(By.ID, 'txtUserName')
@@ -79,7 +79,6 @@ def close_modals(driver):
 
     for button in reversed(close_buttons):
         button.click()
-        driver.implicitly_wait(1)
 
 
 def check_weeks(weeks, time_pair_dict, off_dates, work_days, driver):
@@ -94,10 +93,6 @@ def check_weeks(weeks, time_pair_dict, off_dates, work_days, driver):
     """
     for week in weeks:
         days = week.find_elements(By.CLASS_NAME, 'dayContainer')
-        # then remove the last 4 days, we only care about mon, tues, wed
-
-        # del based on work_days
-
         # convert the string to a list of indices
         indices_to_keep = [int(char) for char in work_days]
         # filter
@@ -109,7 +104,6 @@ def check_weeks(weeks, time_pair_dict, off_dates, work_days, driver):
             if not ('past' in day.get_attribute('class')):
                 # click the day
                 day.click()
-                driver.implicitly_wait(0.5)
 
                 # pick up day modal
                 day_modal = driver.find_element(By.CLASS_NAME, 'modal-content')
@@ -120,7 +114,6 @@ def check_weeks(weeks, time_pair_dict, off_dates, work_days, driver):
                 assigned_shifts_today = not bool(len(day_modal.find_elements(By.XPATH, f".//div[contains(text(), '{no_assigned_shifts_text}')]")))
                 if assigned_shifts_today:
                     print(day.get_attribute("id"), 'already working this day')
-
 
                 # also, we really do not want to even check for shifts if we booked it off
                 # the following words will appear in the modal if it's booked off.
@@ -150,7 +143,6 @@ def check_weeks(weeks, time_pair_dict, off_dates, work_days, driver):
                     # find the open shifts button and click it
                     find_shifts_button = driver.find_elements(By.CLASS_NAME, 'di_find_work')
                     find_shifts_button[0].click()
-                    driver.implicitly_wait(1)
 
                     # pick up shifts if they are there...
                     # to check for shifts, find the "Select a shift you would like to take."
@@ -186,13 +178,11 @@ def check_weeks(weeks, time_pair_dict, off_dates, work_days, driver):
                         # if there's a shift we want to take, click the highest priority one
                         if valid_rows:
                             valid_rows[0][0].click()
-                            driver.implicitly_wait(1)
                             # click take shift button
                             # switch this to find_element by ClassName, probably will be di_take_shift
                             take_shift_button = driver.find_element(By.XPATH, "//a[text()='Take Shift']")
                             take_shift_button.click()
                             print('shift picked up')
-                            driver.implicitly_wait(3)
                             close_modals(driver)
                         else:
                             # else, there is no shift we want, go to next day
@@ -210,7 +200,6 @@ def check_weeks(weeks, time_pair_dict, off_dates, work_days, driver):
                     print(f'We are already working, or we do not want to work on {day.get_attribute("id")}')
                     close_buttons = driver.find_elements(By.CLASS_NAME, 'di_close')
                     close_buttons[0].click()
-                    driver.implicitly_wait(1)
 
 
 def pick_up_shifts(driver, time_pair_dict, off_dates, work_days):
@@ -224,16 +213,12 @@ def pick_up_shifts(driver, time_pair_dict, off_dates, work_days):
     Raises:
     NoSuchElementException: if elements can't be found by the driver, in particular, today's date
     """
-    # first verify we're on the correct page by checking if current date is in the calendar
-
-
     # in headless, i think it's only one week per page
     while True:
         # get calendar
         calendar_weeks = driver.find_elements(By.CLASS_NAME, 'calendarWeek')
 
         # for each week, do it
-
         check_weeks(calendar_weeks, time_pair_dict, off_dates, work_days, driver)
 
         next_button = driver.find_elements(By.CLASS_NAME, 'di_next')
@@ -241,11 +226,8 @@ def pick_up_shifts(driver, time_pair_dict, off_dates, work_days):
 
         if 'disabled' not in next_button_class:
             next_button[0].click()
-            driver.implicitly_wait(1)
         else:
             break
-
-
 
 
 if __name__ == '__main__':
@@ -264,17 +246,13 @@ if __name__ == '__main__':
 
     DRIVER.get(WEBSITE)
 
-    # log in
-    log_in(USER, PASSWORD, DRIVER)
-    DRIVER.implicitly_wait(2)
+    DRIVER.implicitly_wait(1)
 
-    # going to develop code while assuming the page that shows up will always be the second page, and
-    # also assume that the current week is always the middle week on the second page, and also going to assume that
-    # there will always be 1 week after on the same page, then another week after that on the next page...
+    log_in(USER, PASSWORD, DRIVER)
+
     pick_up_shifts(DRIVER, TIME_PAIR_DICT, OFF_DATES, WORK_DAYS)
 
     # kill driver (logging out is unnecessary with this line)
     DRIVER.quit()
 
-    # run the loop every REFRESH_INTERVAL
     print("end")
