@@ -234,31 +234,36 @@ def pick_up_shifts(driver, time_pair_dict, off_dates, work_days):
 if __name__ == '__main__':
 
     print('start')
+    # let dyno spin, if that does anything...
+    time.sleep(10)
 
     for i in range(2):
+        try:
 
-        print('loop')
-        # initialize driver LOCALLY
-        if LOCAL == 'TRUE':
-            DRIVER = webdriver.Chrome()
-        else:
-            # initialize driver in Heroku
-            chrome_options = Options()
-            chrome_options.add_argument("--headless=chrome")  # Run in headless mode
-            chrome_options.add_argument("--no-sandbox")
-            chrome_options.add_argument("--disable-dev-shm-usage")
-            DRIVER = webdriver.Chrome(options=chrome_options)
+            print('loop')
+            # initialize driver LOCALLY
+            if LOCAL == 'TRUE':
+                DRIVER = webdriver.Chrome()
+            else:
+                # initialize driver in Heroku
+                chrome_options = Options()
+                chrome_options.add_argument("--headless=chrome")  # Run in headless mode
+                chrome_options.add_argument("--no-sandbox")
+                chrome_options.add_argument("--disable-dev-shm-usage")
+                DRIVER = webdriver.Chrome(options=chrome_options)
 
-        DRIVER.get(WEBSITE)
+            DRIVER.get(WEBSITE)
 
-        DRIVER.implicitly_wait(1)
+            DRIVER.implicitly_wait(1)
 
-        log_in(USER, PASSWORD, DRIVER)
+            log_in(USER, PASSWORD, DRIVER)
 
-        pick_up_shifts(DRIVER, TIME_PAIR_DICT, OFF_DATES, WORK_DAYS)
+            pick_up_shifts(DRIVER, TIME_PAIR_DICT, OFF_DATES, WORK_DAYS)
 
-        # kill driver (logging out is unnecessary with this line)
-        DRIVER.quit()
+            # kill driver (logging out is unnecessary with this line)
+            DRIVER.quit()
+        except Exception as e:
+            print(e)
 
         time.sleep(10)
 
