@@ -43,6 +43,7 @@ def log_in(user, password, driver):
     Raises:
     NoSuchElementException: if elements can't be found by the driver
     """
+    print('signin in')
     try:
         # find elements, and if not found, raise exception (the code will break if you don't do this)
         username_box = driver.find_element(By.ID, 'txtUserName')
@@ -265,7 +266,7 @@ if __name__ == '__main__':
 
     # log in
     log_in(USER, PASSWORD, DRIVER)
-    DRIVER.implicitly_wait(1)
+    DRIVER.implicitly_wait(2)
 
     # going to develop code while assuming the page that shows up will always be the second page, and
     # also assume that the current week is always the middle week on the second page, and also going to assume that
