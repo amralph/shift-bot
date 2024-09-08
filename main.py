@@ -235,7 +235,7 @@ if __name__ == '__main__':
 
     print('start')
     # let dyno spin, if that does anything...
-    time.sleep(8)
+    time.sleep(10)
 
     for i in range(2):
         try:
