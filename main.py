@@ -263,6 +263,7 @@ if __name__ == '__main__':
     # let dyno spin, if that does anything...
     time.sleep(REFRESH_INTERVAL)
 
+    print('initializing db')
     initialize_firebase(FIREBASE_CONFIG)
     db = firestore.client()
 
