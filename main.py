@@ -31,8 +31,7 @@ REFRESH_INTERVAL = 10
 TIME_PAIR_DICT = {
     ('12:00', '20:00'): 1,
     ('14:00', '22:00'): 2,
-    ('18:00', '02:00'): 3,
-    ('20:00', '04:00'): 4
+    ('18:00', '02:00'): 3
 }
 
 def initialize_firebase(firebase_config):
@@ -118,7 +117,7 @@ def check_weeks(weeks, time_pair_dict, off_dates, work_days, driver, database):
         # now for each day in days, check if it's clickable
         for day in filtered_days:
             # if it's not a past day, continue
-            if not ('past' in day.get_attribute('class')):
+            if not ('past' in day.get_attribute('class')) and not ('today' in day.get_attribute('class')):
                 # click the day
                 day.click()
 
