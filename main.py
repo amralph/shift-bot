@@ -206,6 +206,7 @@ def check_weeks(weeks, time_pair_dict, off_dates, work_days, driver, database):
                                 'date': day.get_attribute("id"),
                                 'start_time': valid_rows[0][0],
                                 'end_time': valid_rows[0][1],
+                                'current_time': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
                             })
 
                             print(doc_ref)
@@ -296,7 +297,8 @@ if __name__ == '__main__':
             traceback.print_exc()
             db.collection('errors').add({
                 'message': str(e),
-                'traceback': traceback.format_exc()
+                'traceback': traceback.format_exc(),
+                'current_time': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
             })
 
     print("end")
