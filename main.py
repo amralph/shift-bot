@@ -295,7 +295,8 @@ if __name__ == '__main__':
             print(e)
             traceback.print_exc()
             db.collection('errors').add({
-                'message': str(e)
+                'message': str(e),
+                'traceback': traceback.format_exc()
             })
 
     print("end")
