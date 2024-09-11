@@ -187,13 +187,14 @@ def check_weeks(weeks, time_pair_dict, off_dates, work_days, driver, database):
                             # check if starttime and endtime is in the list of valid pairs
                             if (start_time, end_time) in time_pair_dict:
                                 # insert a tuple into valid_rows, (row, priority of that row)
-                                valid_rows.append((row, time_pair_dict[(start_time, end_time)]))
+                                valid_rows.append((row, time_pair_dict[(start_time, end_time)], start_time, end_time))
 
                         # sort the valid rows based on the priority
                         valid_rows.sort(key=lambda x: x[1])
 
                         # if there's a shift we want to take, click the highest priority one
                         if valid_rows:
+                            # at the first row info, click the row [0][0]
                             valid_rows[0][0].click()
                             # click take shift button
                             # switch this to find_element by ClassName, probably will be di_take_shift
@@ -204,8 +205,8 @@ def check_weeks(weeks, time_pair_dict, off_dates, work_days, driver, database):
                             # put it in db
                             doc_ref = database.collection('shifts_picked_up').document(day.get_attribute("id")).set({
                                 'date': day.get_attribute("id"),
-                                'start_time': valid_rows[0][0],
-                                'end_time': valid_rows[0][1],
+                                'start_time': valid_rows[0][2],
+                                'end_time': valid_rows[0][3],
                                 'current_time': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()),
                                 'local': LOCAL
                             })
