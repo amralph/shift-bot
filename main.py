@@ -1,8 +1,8 @@
 import os
 import ast
 import time
-
-from datetime import datetime
+import traceback
+import json
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -10,6 +10,9 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.chrome.options import Options
 
 from dotenv import load_dotenv, find_dotenv
+
+import firebase_admin
+from firebase_admin import credentials, firestore
 
 
 # credentials
@@ -20,16 +23,27 @@ WEBSITE = os.getenv('WEBSITE')
 LOCAL = os.getenv('LOCAL')
 OFF_DATES = ast.literal_eval(os.getenv('OFF_DATES'))
 WORK_DAYS = os.getenv('WORK_DAYS')
+FIREBASE_CONFIG = json.loads(os.getenv('FIREBASE_CONFIG'))
 
-REFRESH_INTERVAL = 300
+REFRESH_INTERVAL = 10
 
 # time pairs
 TIME_PAIR_DICT = {
     ('12:00', '20:00'): 1,
     ('14:00', '22:00'): 2,
-    ('18:00', '02:00'): 3,
-    ('20:00', '04:00'): 4
+    ('18:00', '02:00'): 3
 }
+
+def initialize_firebase(firebase_config):
+    """Initializes firebase
+    Parameters:
+    firebase_config (dictionary): dictionary of firebase configurations
+
+    Returns: None
+    """
+    cred = credentials.Certificate(firebase_config)
+    firebase_admin.initialize_app(cred)
+
 
 def log_in(user, password, driver):
     """Logs in user in the browser given user, password, and driver
@@ -65,6 +79,7 @@ def log_in(user, password, driver):
     except NoSuchElementException as e:
         print(e)
 
+
 def close_modals(driver):
     """Closes modals on the screen that have di_close in its class
     works hopefully by getting a list of all di_close buttons
@@ -82,7 +97,7 @@ def close_modals(driver):
         button.click()
 
 
-def check_weeks(weeks, time_pair_dict, off_dates, work_days, driver):
+def check_weeks(weeks, time_pair_dict, off_dates, work_days, driver, database):
     """Helper function for pick_up_shifts
     Will check a given week, then will pick up shifts on each day if appropriate
 
@@ -102,7 +117,7 @@ def check_weeks(weeks, time_pair_dict, off_dates, work_days, driver):
         # now for each day in days, check if it's clickable
         for day in filtered_days:
             # if it's not a past day, continue
-            if not ('past' in day.get_attribute('class')):
+            if not ('past' in day.get_attribute('class')) and not ('today' in day.get_attribute('class')):
                 # click the day
                 day.click()
 
@@ -171,19 +186,32 @@ def check_weeks(weeks, time_pair_dict, off_dates, work_days, driver):
                             # check if starttime and endtime is in the list of valid pairs
                             if (start_time, end_time) in time_pair_dict:
                                 # insert a tuple into valid_rows, (row, priority of that row)
-                                valid_rows.append((row, time_pair_dict[(start_time, end_time)]))
+                                valid_rows.append((row, time_pair_dict[(start_time, end_time)], start_time, end_time))
 
                         # sort the valid rows based on the priority
                         valid_rows.sort(key=lambda x: x[1])
 
                         # if there's a shift we want to take, click the highest priority one
                         if valid_rows:
+                            # at the first row info, click the row [0][0]
                             valid_rows[0][0].click()
                             # click take shift button
                             # switch this to find_element by ClassName, probably will be di_take_shift
                             take_shift_button = driver.find_element(By.XPATH, "//a[text()='Take Shift']")
                             take_shift_button.click()
                             print('shift picked up')
+
+                            # put it in db
+                            doc_ref = database.collection('shifts_picked_up').document(day.get_attribute("id")).set({
+                                'date': day.get_attribute("id"),
+                                'start_time': valid_rows[0][2],
+                                'end_time': valid_rows[0][3],
+                                'current_time': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()),
+                                'local': LOCAL
+                            })
+
+                            print(doc_ref)
+
                             close_modals(driver)
                         else:
                             # else, there is no shift we want, go to next day
@@ -203,7 +231,7 @@ def check_weeks(weeks, time_pair_dict, off_dates, work_days, driver):
                     close_buttons[0].click()
 
 
-def pick_up_shifts(driver, time_pair_dict, off_dates, work_days):
+def pick_up_shifts(driver, time_pair_dict, off_dates, work_days, database):
     """Picks up shifts if they exist
 
     Parameters:
@@ -220,7 +248,7 @@ def pick_up_shifts(driver, time_pair_dict, off_dates, work_days):
         calendar_weeks = driver.find_elements(By.CLASS_NAME, 'calendarWeek')
 
         # for each week, do it
-        check_weeks(calendar_weeks, time_pair_dict, off_dates, work_days, driver)
+        check_weeks(calendar_weeks, time_pair_dict, off_dates, work_days, driver, database)
 
         next_button = driver.find_elements(By.CLASS_NAME, 'di_next')
         next_button_class = next_button[0].get_attribute('class')
@@ -235,11 +263,14 @@ if __name__ == '__main__':
 
     print('start')
     # let dyno spin, if that does anything...
-    time.sleep(10)
+    time.sleep(REFRESH_INTERVAL)
 
-    for i in range(2):
+    print('initializing db')
+    initialize_firebase(FIREBASE_CONFIG)
+    db = firestore.client()
+
+    for n in range(2):
         try:
-
             print('loop')
             # initialize driver LOCALLY
             if LOCAL == 'TRUE':
@@ -258,11 +289,18 @@ if __name__ == '__main__':
 
             log_in(USER, PASSWORD, DRIVER)
 
-            pick_up_shifts(DRIVER, TIME_PAIR_DICT, OFF_DATES, WORK_DAYS)
+            pick_up_shifts(DRIVER, TIME_PAIR_DICT, OFF_DATES, WORK_DAYS, db)
 
             # kill driver (logging out is unnecessary with this line)
             DRIVER.quit()
         except Exception as e:
             print(e)
+            traceback.print_exc()
+            db.collection('errors').add({
+                'message': str(e),
+                'traceback': traceback.format_exc(),
+                'current_time': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()),
+                'local': LOCAL
+            })
 
     print("end")
