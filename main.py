@@ -118,6 +118,7 @@ def check_weeks(weeks, time_pair_dict, off_dates, work_days, driver, database, a
         # now for each day in days, check if it's clickable
         for day in filtered_days:
             # if it's not a past day, continue
+            print(day.get_attribute('class'), day.get_attribute('id'))
             if not ('past' in day.get_attribute('class')):
                 # check day to see if we have vacation, have it off, or already working
                 vacation_words = ["LIEU", "PTO", "VACU"]
