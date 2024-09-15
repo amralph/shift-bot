@@ -117,7 +117,7 @@ def check_weeks(weeks, time_pair_dict, off_dates, work_days, driver, database):
         # now for each day in days, check if it's clickable
         for day in filtered_days:
             # if it's not a past day, continue
-            if not ('past' in day.get_attribute('class')) and not ('today' in day.get_attribute('class')):
+            if not ('past' in day.get_attribute('class')):
                 # click the day
                 day.click()
 
@@ -227,8 +227,7 @@ def check_weeks(weeks, time_pair_dict, off_dates, work_days, driver, database):
                 # if we do have a shift today, or we have vacation, close the modal
                 else:
                     print(f'We are already working, or we do not want to work on {day.get_attribute("id")}')
-                    close_buttons = driver.find_elements(By.CLASS_NAME, 'di_close')
-                    close_buttons[0].click()
+                    close_modals(driver)
 
 
 def pick_up_shifts(driver, time_pair_dict, off_dates, work_days, database):
