@@ -218,6 +218,15 @@ def pick_up_shifts(driver, time_pair_dict, off_dates, work_days, database, armed
     NoSuchElementException: if elements can't be found by the driver, in particular, today's date
     """
     # in headless, i think it's only one week per page
+    # go to front of calendar, if it starts in the future
+    while True:
+        previous_button = driver.find_elements(By.CLASS_NAME, 'di_previous')
+        previous_button_class = previous_button[0].get_attribute('class')
+        if 'disabled' not in previous_button_class:
+            previous_button[0].click()
+        else:
+            break
+    # move to the end of calendar
     while True:
         # get calendar
         calendar_weeks = driver.find_elements(By.CLASS_NAME, 'calendarWeek')
