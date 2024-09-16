@@ -258,6 +258,8 @@ if __name__ == '__main__':
     else:
         print('Shift Bot is not armed: A shift will not be picked up if one is found')
 
+    print('Looking for the following shifts with their priorities:', TIME_PAIR_DICT)
+
     print('initializing db')
     initialize_firebase(FIREBASE_CONFIG)
     db = firestore.client()
