@@ -249,13 +249,11 @@ if __name__ == '__main__':
     else:
         print('Shift Bot is not armed: A shift will not be picked up if one is found')
 
-    # let dyno spin, if that does anything...
-    time.sleep(REFRESH_INTERVAL)
     print('initializing db')
     initialize_firebase(FIREBASE_CONFIG)
     db = firestore.client()
 
-    for n in range(1):
+    while True:
         try:
             print('loop')
             # initialize driver LOCALLY
@@ -289,4 +287,6 @@ if __name__ == '__main__':
                 'local': LOCAL
             })
 
-    print("end")
+        print('waiting')
+        time.sleep(60)
+
