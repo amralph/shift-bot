@@ -254,9 +254,11 @@ if __name__ == '__main__':
     db = firestore.client()
 
     while True:
+        DRIVER = None
         try:
             print('loop')
             # initialize driver LOCALLY
+            print('initialize driver')
             if LOCAL == 'TRUE':
                 DRIVER = webdriver.Chrome()
             else:
@@ -268,15 +270,11 @@ if __name__ == '__main__':
                 DRIVER = webdriver.Chrome(options=chrome_options)
 
             DRIVER.get(WEBSITE)
-
             DRIVER.implicitly_wait(0.5)
 
             log_in(USER, PASSWORD, DRIVER)
-
             pick_up_shifts(DRIVER, TIME_PAIR_DICT, OFF_DATES, WORK_DAYS, db, ARMED)
 
-            # kill driver (logging out is unnecessary with this line)
-            DRIVER.quit()
         except Exception as e:
             print(e)
             traceback.print_exc()
@@ -287,6 +285,13 @@ if __name__ == '__main__':
                 'local': LOCAL
             })
 
-        print('waiting')
+        finally:
+            # kill driver (logging out is unnecessary with this line)
+            if DRIVER:
+                print('quitting driver')
+                DRIVER.quit()
+
+
+        print('waiting...')
         time.sleep(60)
 
