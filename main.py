@@ -104,7 +104,12 @@ def check_weeks(weeks, time_pair_dict, off_dates, work_days, driver, database, a
 
     Parameters:
     weeks (list of WebElement): a list of Selenium WebElement objects representing weeks
+    time_pair_dict (dictionary): a dictionary whose keys are tuples of times and values are a priority
+    off_dates (list of strings): a list of strings representing dates
+    work_days (string of digits): a string of digits representing days of the week
     driver (WebDriver): an instance of `selenium.webdriver.chrome.webdriver.WebDriver`
+    database (Firestore Client): a client for Firestore
+    armed (TRUE or FALSE): a string which arms the bot to pick up shifts
 
     Returns: None
     """
@@ -198,7 +203,6 @@ def check_weeks(weeks, time_pair_dict, off_dates, work_days, driver, database, a
                             #  close the modals and go to the next day
                             print(f'No shift we want on {day.get_attribute("id")}')
                             close_modals(driver)
-
                     else:
                         # close the modals and go to the next day
                         print(f'No shifts available on {day.get_attribute("id")}')
@@ -210,6 +214,11 @@ def pick_up_shifts(driver, time_pair_dict, off_dates, work_days, database, armed
 
     Parameters:
     driver (WebDriver): an instance of `selenium.webdriver.chrome.webdriver.WebDriver`
+    time_pair_dict (dictionary): a dictionary whose keys are tuples of times and values are a priority
+    off_dates (list of strings): a list of strings representing dates
+    work_days (string of digits): a string of digits representing days of the week
+    database (Firestore Client): a client for Firestore
+    armed (TRUE or FALSE): a string which arms the bot to pick up shifts
 
     Returns: None
 
