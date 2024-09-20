@@ -24,6 +24,7 @@ LOCAL = os.getenv('LOCAL')
 OFF_DATES = ast.literal_eval(os.getenv('OFF_DATES'))
 WORK_DAYS = os.getenv('WORK_DAYS')
 FIREBASE_CONFIG = json.loads(os.getenv('FIREBASE_CONFIG'))
+ARMED = os.getenv('ARMED')
 
 REFRESH_INTERVAL = 10
 
@@ -97,13 +98,18 @@ def close_modals(driver):
         button.click()
 
 
-def check_weeks(weeks, time_pair_dict, off_dates, work_days, driver, database):
+def check_weeks(weeks, time_pair_dict, off_dates, work_days, driver, database, armed):
     """Helper function for pick_up_shifts
     Will check a given week, then will pick up shifts on each day if appropriate
 
     Parameters:
     weeks (list of WebElement): a list of Selenium WebElement objects representing weeks
+    time_pair_dict (dictionary): a dictionary whose keys are tuples of times and values are a priority
+    off_dates (list of strings): a list of strings representing dates
+    work_days (string of digits): a string of digits representing days of the week
     driver (WebDriver): an instance of `selenium.webdriver.chrome.webdriver.WebDriver`
+    database (Firestore Client): a client for Firestore
+    armed (TRUE or FALSE): a string which arms the bot to pick up shifts
 
     Returns: None
     """
@@ -118,43 +124,19 @@ def check_weeks(weeks, time_pair_dict, off_dates, work_days, driver, database):
         for day in filtered_days:
             # if it's not a past day, continue
             if not ('past' in day.get_attribute('class')):
-                # click the day
-                day.click()
-
-                # pick up day modal
-                day_modal = driver.find_element(By.CLASS_NAME, 'modal-content')
-
-                # check if we have shifts today
-                no_assigned_shifts_text = 'You have no shifts on this day.'
-                # there's a shift if we don't find an element that says 'You have no shifts on this day.'.
-                assigned_shifts_today = not bool(len(day_modal.find_elements(By.XPATH, f".//div[contains(text(), '{no_assigned_shifts_text}')]")))
-                if assigned_shifts_today:
-                    print(day.get_attribute("id"), 'already working this day')
-
-                # also, we really do not want to even check for shifts if we booked it off
-                # the following words will appear in the modal if it's booked off.
-                has_lieu = bool(len(day_modal.find_elements(By.XPATH, f".//div[contains(text(), 'LIEU')]")))
-                has_pto = bool(len(day_modal.find_elements(By.XPATH, f".//div[contains(text(), 'PTO')]")))
-                has_vacu = bool(len(day_modal.find_elements(By.XPATH, f".//div[contains(text(), 'VACU')]")))
-
-                is_vacation_day = has_lieu or has_pto or has_vacu
-
-                if is_vacation_day:
-                    print(day.get_attribute("id"), 'is vacation')
-
-                # if we have no shift today AND we don't have LIEU, PTO, or VACU in the modal, look for a shift
-
-                # ALSO, we must check to see if the day is in OFF_DATES, OR if the day of the week is an allowed day
-                is_off_date = False
-                if day.get_attribute("id") in off_dates:
-                    is_off_date = True
-                    print(day.get_attribute("id"), 'is off day')
-
-                available_today = not assigned_shifts_today and not is_vacation_day and not is_off_date
-
-                if available_today:
-
-                    print(f'Looking for work on {day.get_attribute("id")}')
+                # check day to see if we have vacation, have it off, or already working
+                vacation_words = ["LIEU", "PTO", "VACU"]
+                working_words = ["TG DLR"]
+                # before clicking, check if day is vacation or off date, or already working.
+                if any(vacation_word in day.text for vacation_word in vacation_words):
+                    print(day.get_attribute("id") + ' is vacation')
+                elif day.get_attribute("id") in off_dates:
+                    print(day.get_attribute("id") + ' is off day')
+                elif any(working_word in day.text for working_word in working_words):
+                    print(day.get_attribute("id") + ' already working')
+                else:
+                    day.click()
+                    print(f'{day.get_attribute("id")} looking for work')
 
                     # find the open shifts button and click it
                     find_shifts_button = driver.find_elements(By.CLASS_NAME, 'di_find_work')
@@ -166,7 +148,7 @@ def check_weeks(weeks, time_pair_dict, off_dates, work_days, driver, database):
                     shifts_available = bool(len(driver.find_elements(By.XPATH, f"//div[contains(text(), '{available_shifts_text}')]")))
 
                     if shifts_available:
-                        print(f'We have shifts available on {day.get_attribute("id")}')
+                        print(f'Shifts available on {day.get_attribute("id")}')
                         # then we pick up the shift
 
                         # pick up the table
@@ -193,48 +175,50 @@ def check_weeks(weeks, time_pair_dict, off_dates, work_days, driver, database):
 
                         # if there's a shift we want to take, click the highest priority one
                         if valid_rows:
-                            # at the first row info, click the row [0][0]
-                            valid_rows[0][0].click()
-                            # click take shift button
-                            # switch this to find_element by ClassName, probably will be di_take_shift
-                            take_shift_button = driver.find_element(By.XPATH, "//a[text()='Take Shift']")
-                            take_shift_button.click()
-                            print('shift picked up')
+                            if armed == 'TRUE':
+                                # at the first row info, click the row [0][0]
+                                valid_rows[0][0].click()
+                                # click take shift button
+                                # switch this to find_element by ClassName, probably will be di_take_shift
+                                take_shift_button = driver.find_element(By.XPATH, "//a[text()='Take Shift']")
+                                take_shift_button.click()
+                                print('shift picked up')
 
-                            # put it in db
-                            doc_ref = database.collection('shifts_picked_up').document(day.get_attribute("id")).set({
-                                'date': day.get_attribute("id"),
-                                'start_time': valid_rows[0][2],
-                                'end_time': valid_rows[0][3],
-                                'current_time': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()),
-                                'local': LOCAL
-                            })
+                                # put it in db
+                                doc_ref = database.collection('shifts_picked_up').document(day.get_attribute("id")).set({
+                                    'date': day.get_attribute("id"),
+                                    'start_time': valid_rows[0][2],
+                                    'end_time': valid_rows[0][3],
+                                    'current_time': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()),
+                                    'local': LOCAL
+                                })
 
-                            print(doc_ref)
+                                print(doc_ref)
 
-                            close_modals(driver)
+                                close_modals(driver)
+                            else:
+                                print('Bot is not armed')
                         else:
                             # else, there is no shift we want, go to next day
                             #  close the modals and go to the next day
-                            print(f'There is no shift we want on {day.get_attribute("id")}')
+                            print(f'No shift we want on {day.get_attribute("id")}')
                             close_modals(driver)
-
                     else:
                         # close the modals and go to the next day
-                        print(f'We have no shifts available on {day.get_attribute("id")}')
+                        print(f'No shifts available on {day.get_attribute("id")}')
                         close_modals(driver)
 
-                # if we do have a shift today, or we have vacation, close the modal
-                else:
-                    print(f'We are already working, or we do not want to work on {day.get_attribute("id")}')
-                    close_modals(driver)
 
-
-def pick_up_shifts(driver, time_pair_dict, off_dates, work_days, database):
+def pick_up_shifts(driver, time_pair_dict, off_dates, work_days, database, armed):
     """Picks up shifts if they exist
 
     Parameters:
     driver (WebDriver): an instance of `selenium.webdriver.chrome.webdriver.WebDriver`
+    time_pair_dict (dictionary): a dictionary whose keys are tuples of times and values are a priority
+    off_dates (list of strings): a list of strings representing dates
+    work_days (string of digits): a string of digits representing days of the week
+    database (Firestore Client): a client for Firestore
+    armed (TRUE or FALSE): a string which arms the bot to pick up shifts
 
     Returns: None
 
@@ -242,12 +226,21 @@ def pick_up_shifts(driver, time_pair_dict, off_dates, work_days, database):
     NoSuchElementException: if elements can't be found by the driver, in particular, today's date
     """
     # in headless, i think it's only one week per page
+    # go to front of calendar, if it starts in the future
+    while True:
+        previous_button = driver.find_elements(By.CLASS_NAME, 'di_previous')
+        previous_button_class = previous_button[0].get_attribute('class')
+        if 'disabled' not in previous_button_class:
+            previous_button[0].click()
+        else:
+            break
+    # move to the end of calendar
     while True:
         # get calendar
         calendar_weeks = driver.find_elements(By.CLASS_NAME, 'calendarWeek')
 
         # for each week, do it
-        check_weeks(calendar_weeks, time_pair_dict, off_dates, work_days, driver, database)
+        check_weeks(calendar_weeks, time_pair_dict, off_dates, work_days, driver, database, armed)
 
         next_button = driver.find_elements(By.CLASS_NAME, 'di_next')
         next_button_class = next_button[0].get_attribute('class')
@@ -259,19 +252,24 @@ def pick_up_shifts(driver, time_pair_dict, off_dates, work_days, database):
 
 
 if __name__ == '__main__':
-
     print('start')
-    # let dyno spin, if that does anything...
-    time.sleep(REFRESH_INTERVAL)
+    if ARMED == 'TRUE':
+        print('Shift Bot is armed: A shift will be picked up if one is found')
+    else:
+        print('Shift Bot is not armed: A shift will not be picked up if one is found')
+
+    print('Looking for the following shifts with their priorities:', TIME_PAIR_DICT)
 
     print('initializing db')
     initialize_firebase(FIREBASE_CONFIG)
     db = firestore.client()
 
-    for n in range(2):
+    while True:
+        DRIVER = None
         try:
             print('loop')
             # initialize driver LOCALLY
+            print('initialize driver')
             if LOCAL == 'TRUE':
                 DRIVER = webdriver.Chrome()
             else:
@@ -283,15 +281,11 @@ if __name__ == '__main__':
                 DRIVER = webdriver.Chrome(options=chrome_options)
 
             DRIVER.get(WEBSITE)
-
-            DRIVER.implicitly_wait(1)
+            DRIVER.implicitly_wait(0.5)
 
             log_in(USER, PASSWORD, DRIVER)
+            pick_up_shifts(DRIVER, TIME_PAIR_DICT, OFF_DATES, WORK_DAYS, db, ARMED)
 
-            pick_up_shifts(DRIVER, TIME_PAIR_DICT, OFF_DATES, WORK_DAYS, db)
-
-            # kill driver (logging out is unnecessary with this line)
-            DRIVER.quit()
         except Exception as e:
             print(e)
             traceback.print_exc()
@@ -302,4 +296,13 @@ if __name__ == '__main__':
                 'local': LOCAL
             })
 
-    print("end")
+        finally:
+            # kill driver (logging out is unnecessary with this line)
+            if DRIVER:
+                print('quitting driver')
+                DRIVER.quit()
+
+
+        print('waiting...')
+        time.sleep(60)
+
