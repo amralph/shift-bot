@@ -229,9 +229,15 @@ def pick_up_shifts(driver, time_pair_dict, off_dates, work_days, database, armed
     # go to front of calendar, if it starts in the future
     while True:
         previous_button = driver.find_elements(By.CLASS_NAME, 'di_previous')
-        previous_button_class = previous_button[0].get_attribute('class')
-        if 'disabled' not in previous_button_class:
-            previous_button[0].click()
+
+        if len(previous_button) > 0:
+
+
+            previous_button_class = previous_button[0].get_attribute('class')
+            if 'disabled' not in previous_button_class:
+                previous_button[0].click()
+            else:
+                break
         else:
             break
     # move to the end of calendar
@@ -243,13 +249,16 @@ def pick_up_shifts(driver, time_pair_dict, off_dates, work_days, database, armed
         check_weeks(calendar_weeks, time_pair_dict, off_dates, work_days, driver, database, armed)
 
         next_button = driver.find_elements(By.CLASS_NAME, 'di_next')
-        next_button_class = next_button[0].get_attribute('class')
 
-        if 'disabled' not in next_button_class:
-            next_button[0].click()
+        if len(next_button) > 0:
+            next_button_class = next_button[0].get_attribute('class')
+
+            if 'disabled' not in next_button_class:
+                next_button[0].click()
+            else:
+                break
         else:
             break
-
 
 if __name__ == '__main__':
     print('start')
