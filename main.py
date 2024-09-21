@@ -26,7 +26,7 @@ WORK_DAYS = os.getenv('WORK_DAYS')
 FIREBASE_CONFIG = json.loads(os.getenv('FIREBASE_CONFIG'))
 ARMED = os.getenv('ARMED')
 
-REFRESH_INTERVAL = 10
+REFRESH_INTERVAL = 20
 
 # time pairs
 TIME_PAIR_DICT = {
@@ -205,7 +205,6 @@ def check_weeks(weeks, time_pair_dict, off_dates, work_days, driver, database, a
                             close_modals(driver)
                     else:
                         # close the modals and go to the next day
-                        print(f'No shifts available on {day.get_attribute("id")}')
                         close_modals(driver)
 
 
@@ -313,5 +312,5 @@ if __name__ == '__main__':
 
 
         print('waiting...')
-        time.sleep(60)
+        time.sleep(REFRESH_INTERVAL)
 
