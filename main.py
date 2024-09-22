@@ -26,7 +26,7 @@ WORK_DAYS = os.getenv('WORK_DAYS')
 FIREBASE_CONFIG = json.loads(os.getenv('FIREBASE_CONFIG'))
 ARMED = os.getenv('ARMED')
 
-REFRESH_INTERVAL = 20
+REFRESH_INTERVAL = 60
 
 # time pairs
 TIME_PAIR_DICT = {
