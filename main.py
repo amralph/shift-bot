@@ -14,9 +14,11 @@ from dotenv import load_dotenv, find_dotenv
 import firebase_admin
 from firebase_admin import credentials, firestore
 
+current_directory = os.getcwd()
+env_path = os.path.join(current_directory, '.env')
 
 # credentials
-load_dotenv(find_dotenv())
+load_dotenv(env_path)
 USER = os.getenv('USER')
 PASSWORD = os.getenv('PASSWORD')
 WEBSITE = os.getenv('WEBSITE')
@@ -25,6 +27,7 @@ OFF_DATES = ast.literal_eval(os.getenv('OFF_DATES'))
 WORK_DAYS = os.getenv('WORK_DAYS')
 FIREBASE_CONFIG = json.loads(os.getenv('FIREBASE_CONFIG'))
 ARMED = os.getenv('ARMED')
+ENV = os.getenv('ENV')
 
 REFRESH_INTERVAL = 60
 
@@ -190,7 +193,8 @@ def check_weeks(weeks, time_pair_dict, off_dates, work_days, driver, database, a
                                     'start_time': valid_rows[0][2],
                                     'end_time': valid_rows[0][3],
                                     'current_time': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()),
-                                    'local': LOCAL
+                                    'local': LOCAL,
+                                    'env': ENV
                                 })
 
                                 print(doc_ref)
@@ -283,7 +287,7 @@ if __name__ == '__main__':
             else:
                 # initialize driver in Heroku
                 chrome_options = Options()
-                chrome_options.add_argument("--headless=chrome")  # Run in headless mode
+                chrome_options.add_argument("--headless=old")  # Run in headless mode
                 chrome_options.add_argument("--no-sandbox")
                 chrome_options.add_argument("--disable-dev-shm-usage")
                 DRIVER = webdriver.Chrome(options=chrome_options)
@@ -301,7 +305,8 @@ if __name__ == '__main__':
                 'message': str(e),
                 'traceback': traceback.format_exc(),
                 'current_time': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()),
-                'local': LOCAL
+                'local': LOCAL,
+                'env': ENV
             })
 
         finally:
