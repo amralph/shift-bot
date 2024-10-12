@@ -18,3 +18,5 @@ dist/
 # IDE/editor specific files
 .idea/
 .vscode/
+
+main.spec
