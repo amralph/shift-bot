@@ -25,6 +25,7 @@ OFF_DATES = ast.literal_eval(os.getenv('OFF_DATES'))
 WORK_DAYS = os.getenv('WORK_DAYS')
 FIREBASE_CONFIG = json.loads(os.getenv('FIREBASE_CONFIG'))
 ARMED = os.getenv('ARMED')
+ENV = os.getenv('ENV')
 
 REFRESH_INTERVAL = 60
 
@@ -190,7 +191,8 @@ def check_weeks(weeks, time_pair_dict, off_dates, work_days, driver, database, a
                                     'start_time': valid_rows[0][2],
                                     'end_time': valid_rows[0][3],
                                     'current_time': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()),
-                                    'local': LOCAL
+                                    'local': LOCAL,
+                                    'env': ENV
                                 })
 
                                 print(doc_ref)
@@ -301,7 +303,8 @@ if __name__ == '__main__':
                 'message': str(e),
                 'traceback': traceback.format_exc(),
                 'current_time': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()),
-                'local': LOCAL
+                'local': LOCAL,
+                'env': ENV
             })
 
         finally:
