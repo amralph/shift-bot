@@ -33,7 +33,6 @@ REFRESH_INTERVAL = 60
 TIME_PAIR_DICT = {
     ('12:00', '20:00'): 1,
     ('14:00', '22:00'): 2,
-    ('18:00', '02:00'): 3
 }
 
 def initialize_firebase(firebase_config):
