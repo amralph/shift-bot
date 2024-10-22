@@ -27,7 +27,7 @@ FIREBASE_CONFIG = json.loads(os.getenv('FIREBASE_CONFIG'))
 ARMED = os.getenv('ARMED')
 ENV = os.getenv('ENV')
 
-REFRESH_INTERVAL = 3
+REFRESH_INTERVAL = 1
 
 # time pairs
 TIME_PAIR_DICT = {
